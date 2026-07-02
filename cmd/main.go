@@ -1,6 +1,10 @@
 package main
 
-import "github.com/NghiaLeopard/bookmark-management/internal/api"
+import (
+	_ "github.com/NghiaLeopard/bookmark-management/docs"
+
+	"github.com/NghiaLeopard/bookmark-management/internal/api"
+)
 
 func main() {
 	app := api.NewEngine()

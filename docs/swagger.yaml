@@ -1,0 +1,29 @@
+definitions:
+  model.HealthCheck:
+    properties:
+      instance_id:
+        type: string
+      message:
+        type: string
+      service_name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /health-check:
+    get:
+      consumes:
+      - application/json
+      description: check health of the service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HealthCheck'
+      summary: check health of the service
+      tags:
+      - health-check
+swagger: "2.0"

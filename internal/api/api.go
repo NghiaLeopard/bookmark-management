@@ -1,9 +1,12 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/NghiaLeopard/bookmark-management/internal/config"
 	"github.com/NghiaLeopard/bookmark-management/internal/handler"
+	"github.com/NghiaLeopard/bookmark-management/internal/initialize"
 	"github.com/NghiaLeopard/bookmark-management/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -14,11 +17,17 @@ type Engine interface {
 }
 
 type engine struct {
-	app *gin.Engine
+	app    *gin.Engine
+	config *config.Config
 }
 
 func NewEngine() Engine {
-	app := &engine{app: gin.Default()}
+	config, err := config.NewConfig()
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	app := &engine{app: gin.Default(), config: config}
 
 	app.InitRoutes()
 
@@ -30,11 +39,13 @@ func (e *engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *engine) Start() {
-	e.app.Run(":8080")
+	e.app.Run(":" + e.config.Port)
 }
 
 func (e *engine) InitRoutes() {
-	genPassService := service.NewGenPassService()
-	genPassHandler := handler.NewGenPassHandler(genPassService)
-	e.app.POST("/genpass", genPassHandler.GeneratePassword)
+	initialize.InitSwagger(e.app)
+
+	healthCheckService := service.NewHealthCheck(e.config)
+	healthCheckHandler := handler.NewHealthCheck(healthCheckService)
+	e.app.GET("/health-check", healthCheckHandler.CheckHealth)
 }
