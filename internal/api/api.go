@@ -6,9 +6,10 @@ import (
 
 	"github.com/NghiaLeopard/bookmark-management/internal/config"
 	"github.com/NghiaLeopard/bookmark-management/internal/handler"
-	"github.com/NghiaLeopard/bookmark-management/internal/initialize"
 	"github.com/NghiaLeopard/bookmark-management/internal/service"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Engine interface {
@@ -43,7 +44,7 @@ func (e *engine) Start() {
 }
 
 func (e *engine) InitRoutes() {
-	initialize.InitSwagger(e.app)
+	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	healthCheckService := service.NewHealthCheck(e.config)
 	healthCheckHandler := handler.NewHealthCheck(healthCheckService)

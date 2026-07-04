@@ -16,22 +16,23 @@ type healthCheckService struct {
 }
 
 func NewHealthCheck(cfg *config.Config) HealthCheck {
+	instanceId := uuid.New().String()
+
+	if cfg.InstanceId != "" {
+		cfg.InstanceId = instanceId
+	}
+
 	return &healthCheckService{
 		cfg: cfg,
 	}
 }
 
 func (h *healthCheckService) CheckHealth() model.HealthCheck {
-	instanceId := uuid.New().String()
-
-	if h.cfg.InstanceId != "" {
-		instanceId = h.cfg.InstanceId
-	}
 
 	healthCheck := model.HealthCheck{
 		Message:     "OK",
 		ServiceName: h.cfg.ServiceName,
-		InstanceId:  instanceId,
+		InstanceId:  h.cfg.InstanceId,
 	}
 
 	return healthCheck
