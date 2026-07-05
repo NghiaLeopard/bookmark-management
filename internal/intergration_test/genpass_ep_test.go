@@ -27,14 +27,14 @@ func TestGenPassEP(t *testing.T) {
 
 				request := httptest.NewRequest(http.MethodPost, "/genpass", nil)
 
-				app := api.NewEngine()
+				app := api.NewEngine(nil)
 
 				app.ServeHTTP(recorder, request)
 
 				return recorder
 			},
 			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"password":}`,
+			ExpectedResponseBody: `{"password":`,
 		},
 	}
 
@@ -44,7 +44,7 @@ func TestGenPassEP(t *testing.T) {
 			recorder := testCase.setUpServeHttp(t)
 
 			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
-			assert.Contains(t, testCase.ExpectedResponseBody, recorder.Body.String())
+			assert.Contains(t, recorder.Body.String(), testCase.ExpectedResponseBody)
 		})
 	}
 }

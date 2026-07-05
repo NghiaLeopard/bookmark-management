@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/NghiaLeopard/bookmark-management/internal/handler"
+	"github.com/NghiaLeopard/bookmark-management/internal/repository"
 	"github.com/NghiaLeopard/bookmark-management/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 type Engine interface {
@@ -15,10 +17,11 @@ type Engine interface {
 
 type engine struct {
 	app *gin.Engine
+	rdb *redis.Client
 }
 
-func NewEngine() Engine {
-	app := &engine{app: gin.Default()}
+func NewEngine(rdb *redis.Client) Engine {
+	app := &engine{app: gin.Default(), rdb: rdb}
 
 	app.InitRoutes()
 
@@ -36,5 +39,10 @@ func (e *engine) Start() {
 func (e *engine) InitRoutes() {
 	genPassService := service.NewGenPassService()
 	genPassHandler := handler.NewGenPassHandler(genPassService)
+
+	urlStorage := repository.NewUrlStorage(e.rdb)
+	urlService := service.NewShortenUrlService(urlStorage, genPassService)
+	urlHandler := handler.NewShortenUrlHandler(urlService)
 	e.app.POST("/genpass", genPassHandler.GeneratePassword)
+	e.app.POST("/shortenurl", urlHandler.CreateShortenUrl)
 }
