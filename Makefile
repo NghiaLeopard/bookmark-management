@@ -1,18 +1,9 @@
-.PHONY: run 
+.PHONY: run test
 
 run:
 	go run ./cmd/api/main.go
 
-
-# -coverpkg: cover the packages that are used in the tests
-# -covermode: atomic, count, set, or default
-# -p 1: run the tests in parallel
-# -coverprofile: generate the coverage profile
-# -coverhtml: generate the coverage HTML report
-
-COVERAGE_EXCLUDE=mocks|main
 test:
-	go test ./... -coverprofile=coverage.tmp -coverpkg=./... -covermode=atomic -p 1
-	grep -vE "${COVERAGE_EXCLUDE}" coverage.tmp > coverage.out
-	go tool cover -html=coverage.out -o coverage.html 
-
+	go test $$(go list -f '{{if .TestGoFiles}}{{.ImportPath}}{{end}}' ./...) \
+		-coverprofile=coverage.out -coverpkg=./... -covermode=atomic -p 1 -count=1
+	go tool cover -html=coverage.out -o coverage.html
