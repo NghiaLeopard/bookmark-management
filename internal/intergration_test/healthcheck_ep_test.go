@@ -9,6 +9,7 @@ import (
 
 	"github.com/NghiaLeopard/bookmark-management/internal/api"
 	"github.com/NghiaLeopard/bookmark-management/internal/model"
+	redisPkg "github.com/NghiaLeopard/bookmark-management/internal/pkg/redis"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,14 +37,15 @@ func TestHealthCheckEP(t *testing.T) {
 
 				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 
-				app := api.NewEngine(nil)
+				redis := redisPkg.NewMockRClient(t)
+				app := api.NewEngine(redis)
 
 				app.ServeHTTP(recorder, request)
 
 				return recorder
 			},
 			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"message":"OK","service_name":"bookmark-management","instance_id":"1234567890"}`,
+			ExpectedResponseBody: `{"message":"OK","service_name":"bookmark-management","instance_id":"1234567890","redis_status":"PONG"}`,
 		},
 		{
 			name: "success with empty service name",
@@ -57,14 +59,15 @@ func TestHealthCheckEP(t *testing.T) {
 
 				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 
-				app := api.NewEngine(nil)
+				redis := redisPkg.NewMockRClient(t)
+				app := api.NewEngine(redis)
 
 				app.ServeHTTP(recorder, request)
 
 				return recorder
 			},
 			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"message":"OK","service_name":"","instance_id":"1234567890"}`,
+			ExpectedResponseBody: `{"message":"OK","service_name":"","instance_id":"1234567890","redis_status":"PONG"}`,
 		},
 
 		{
@@ -79,14 +82,15 @@ func TestHealthCheckEP(t *testing.T) {
 
 				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 
-				app := api.NewEngine(nil)
+				redis := redisPkg.NewMockRClient(t)
+				app := api.NewEngine(redis)
 
 				app.ServeHTTP(recorder, request)
 
 				return recorder
 			},
 			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"message":"OK","service_name":"bookmark-management","instance_id": "` + instanceId + `"}`,
+			ExpectedResponseBody: `{"message":"OK","service_name":"bookmark-management","instance_id": "` + instanceId + `","redis_status":"PONG"}`,
 		},
 
 		{
@@ -101,14 +105,39 @@ func TestHealthCheckEP(t *testing.T) {
 
 				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
 
-				app := api.NewEngine(nil)
+				redis := redisPkg.NewMockRClient(t)
+				app := api.NewEngine(redis)
 
 				app.ServeHTTP(recorder, request)
 
 				return recorder
 			},
 			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"message":"OK","service_name":"","instance_id":"` + instanceId + `"}`,
+			ExpectedResponseBody: `{"message":"OK","service_name":"","instance_id":"` + instanceId + `","redis_status":"PONG"}`,
+		},
+
+		{
+			name: "error with redis is closed",
+			setUpEnv: func() {
+				t.Setenv("SERVICE_NAME", "bookmark-management")
+				t.Setenv("INSTANCE_ID", instanceId)
+			},
+
+			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+
+				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+
+				redis := redisPkg.NewMockRClient(t)
+				redis.Close()
+				app := api.NewEngine(redis)
+
+				app.ServeHTTP(recorder, request)
+
+				return recorder
+			},
+			ExpectedStatusCode:   http.StatusInternalServerError,
+			ExpectedResponseBody: `"Internal server error"`,
 		},
 	}
 
@@ -117,17 +146,23 @@ func TestHealthCheckEP(t *testing.T) {
 			testCase.setUpEnv()
 			recorder := testCase.setUpServeHttp(t)
 
-			var marshalData model.HealthCheck
-			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
-			assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &marshalData))
-			assert.Equal(t, "OK", marshalData.Message)
+			if testCase.ExpectedStatusCode == http.StatusOK {
+				var marshalData model.HealthCheck
+				assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+				assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &marshalData))
+				assert.Equal(t, "OK", marshalData.Message)
 
-			assert.Equal(t, os.Getenv("SERVICE_NAME"), marshalData.ServiceName)
-			if os.Getenv("INSTANCE_ID") != "" {
-				assert.Equal(t, os.Getenv("INSTANCE_ID"), marshalData.InstanceId)
+				assert.Equal(t, os.Getenv("SERVICE_NAME"), marshalData.ServiceName)
+				assert.Equal(t, "PONG", marshalData.RedisStatus)
+				if os.Getenv("INSTANCE_ID") != "" {
+					assert.Equal(t, os.Getenv("INSTANCE_ID"), marshalData.InstanceId)
+				} else {
+					assert.NotEmpty(t, marshalData.InstanceId)
+					assert.Equal(t, 36, len(marshalData.InstanceId))
+				}
 			} else {
-				assert.NotEmpty(t, marshalData.InstanceId)
-				assert.Equal(t, 36, len(marshalData.InstanceId))
+				assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+				assert.Equal(t, testCase.ExpectedResponseBody, recorder.Body.String())
 			}
 		})
 	}

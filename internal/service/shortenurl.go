@@ -7,6 +7,7 @@ import (
 	"github.com/NghiaLeopard/bookmark-management/internal/repository"
 )
 
+//go:generate mockery --name ShortenUrlService --filename shortenurl.go
 type ShortenUrlService interface {
 	CreateShortenUrl(ctx context.Context, url string, expire time.Duration) (string, error)
 	GetUrlByCode(ctx context.Context, code string) (string, error)

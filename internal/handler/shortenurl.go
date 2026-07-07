@@ -23,13 +23,13 @@ func NewShortenUrlHandler(shortenUrlService service.ShortenUrlService) ShortenUr
 	}
 }
 
-type shortenUrlInputBody struct {
+type ShortenUrlInputBody struct {
 	Url    string        `json:"url" binding:"required"`
 	Expire time.Duration `json:"expire" binding:"required"`
 }
 
 func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) {
-	var input shortenUrlInputBody
+	var input ShortenUrlInputBody
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, "Invalid input")
 		return
@@ -42,14 +42,13 @@ func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"code": code,
+		"code":    code,
+		"message": "Shorten URL generated successfully!",
 	})
-	return
 }
 
 func (h *shortenUrlHandler) GetUrlByCode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"Status": "OK",
 	})
-	return
 }

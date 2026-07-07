@@ -48,7 +48,7 @@ func (e *engine) Start() {
 func (e *engine) InitRoutes() {
 	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	healthCheckService := service.NewHealthCheck(e.config)
+	healthCheckService := service.NewHealthCheck(e.config, e.rdb)
 	healthCheckHandler := handler.NewHealthCheck(healthCheckService)
 	e.app.GET("/health-check", healthCheckHandler.CheckHealth)
 
@@ -56,10 +56,8 @@ func (e *engine) InitRoutes() {
 	genPassHandler := handler.NewGenPassHandler(genPassService)
 	e.app.POST("/genpass", genPassHandler.GeneratePassword)
 
-	if e.rdb != nil {
-		urlStorage := repository.NewUrlStorage(e.rdb)
-		urlService := service.NewShortenUrlService(urlStorage, genPassService)
-		urlHandler := handler.NewShortenUrlHandler(urlService)
-		e.app.POST("/shortenurl", urlHandler.CreateShortenUrl)
-	}
+	urlStorage := repository.NewUrlStorage(e.rdb)
+	urlService := service.NewShortenUrlService(urlStorage, genPassService)
+	urlHandler := handler.NewShortenUrlHandler(urlService)
+	e.app.POST("/shortenurl", urlHandler.CreateShortenUrl)
 }

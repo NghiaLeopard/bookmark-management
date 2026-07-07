@@ -7,6 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+//go:generate mockery --name UrlStorage --filename urlstorage.go
 type UrlStorage interface {
 	StoreUrl(ctx context.Context, code, url string, expire time.Duration) error
 }

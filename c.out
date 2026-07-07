@@ -1,0 +1,14 @@
+mode: set
+github.com/NghiaLeopard/bookmark-management/internal/handler/genpass.go:18.64,20.2 1 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/genpass.go:24.59,27.16 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/genpass.go:27.16,30.3 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/genpass.go:32.2,32.52 1 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/healthcheck.go:18.62,22.2 1 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/healthcheck.go:33.58,36.2 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:20.90,24.2 1 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:31.64,33.51 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:33.51,36.3 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:38.2,39.16 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:39.16,42.3 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:44.2,48.8 2 1
+github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go:51.60,56.2 2 0
