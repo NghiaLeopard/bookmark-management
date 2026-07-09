@@ -1,0 +1,20 @@
+package redis
+
+import (
+	"github.com/kelseyhightower/envconfig"
+)
+
+type config struct {
+	Address  string `default:"localhost:6379" envconfig:"REDIS_ADDRESS"`
+	Password string `default:"" envconfig:"REDIS_PWD"`
+	Db       int    `default:"0" envconfig:"REDIS_DB"`
+}
+
+func newConfig(prefix string) (*config, error) {
+	cfg := &config{}
+
+	if err := envconfig.Process(prefix, cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}

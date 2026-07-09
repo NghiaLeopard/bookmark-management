@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testError = errors.New("Internal server error")
-
 func TestCheckHealth(t *testing.T) {
 	t.Parallel()
 	instanceId := uuid.New().String()
@@ -36,13 +34,13 @@ func TestCheckHealth(t *testing.T) {
 			},
 			setUpMockService: func(ctx context.Context) *mocks.HealthCheck {
 				serviceMock := mocks.NewHealthCheck(t)
-				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "bookmark-management", InstanceId: "1234567890"})
+				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "bookmark-management", InstanceId: "1234567890", RedisStatus: "PONG"}, nil)
 
 				return serviceMock
 			},
 
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"message":"OK","service_name":"bookmark-management","instance_id":"1234567890"}`,
+			expectedResponse:   `{"message":"OK","service_name":"bookmark-management","instance_id":"1234567890","redis_status":"PONG"}`,
 		},
 		{
 			name: "Success with empty service name",
@@ -52,14 +50,13 @@ func TestCheckHealth(t *testing.T) {
 
 			setUpMockService: func(ctx context.Context) *mocks.HealthCheck {
 				serviceMock := mocks.NewHealthCheck(t)
-				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "", InstanceId: "1234567890"})
+				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "", InstanceId: "1234567890", RedisStatus: "PONG"}, nil)
 
 				return serviceMock
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"message":"OK","service_name":"","instance_id":"1234567890"}`,
+			expectedResponse:   `{"message":"OK","service_name":"","instance_id":"1234567890","redis_status":"PONG"}`,
 		},
-
 		{
 			name: "Success with empty instance id",
 			setUpRequest: func(ctx *gin.Context) {
@@ -68,14 +65,13 @@ func TestCheckHealth(t *testing.T) {
 
 			setUpMockService: func(ctx context.Context) *mocks.HealthCheck {
 				serviceMock := mocks.NewHealthCheck(t)
-				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "bookmark-management", InstanceId: instanceId})
+				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "bookmark-management", InstanceId: instanceId, RedisStatus: "PONG"}, nil)
 
 				return serviceMock
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   fmt.Sprintf(`{"message":"OK","service_name":"bookmark-management","instance_id":"%s"}`, instanceId),
+			expectedResponse:   fmt.Sprintf(`{"message":"OK","service_name":"bookmark-management","instance_id":"%s","redis_status":"PONG"}`, instanceId),
 		},
-
 		{
 			name: "Success with empty service name and instance id",
 			setUpRequest: func(ctx *gin.Context) {
@@ -84,12 +80,28 @@ func TestCheckHealth(t *testing.T) {
 
 			setUpMockService: func(ctx context.Context) *mocks.HealthCheck {
 				serviceMock := mocks.NewHealthCheck(t)
-				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "", InstanceId: instanceId})
+				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "OK", ServiceName: "", InstanceId: instanceId, RedisStatus: "PONG"}, nil)
 
 				return serviceMock
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   fmt.Sprintf(`{"message":"OK","service_name":"","instance_id":"%s"}`, instanceId),
+			expectedResponse:   fmt.Sprintf(`{"message":"OK","service_name":"","instance_id":"%s","redis_status":"PONG"}`, instanceId),
+		},
+
+		{
+			name: "Error with redis not responding",
+			setUpRequest: func(ctx *gin.Context) {
+				ctx.Request = httptest.NewRequest(http.MethodGet, "/health-check", nil)
+			},
+
+			setUpMockService: func(ctx context.Context) *mocks.HealthCheck {
+				serviceMock := mocks.NewHealthCheck(t)
+				serviceMock.On("CheckHealth").Return(model.HealthCheck{Message: "Error", ServiceName: "", InstanceId: instanceId, RedisStatus: "Error"}, errors.New("redis: client is closed"))
+
+				return serviceMock
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedResponse:   `"Internal server error"`,
 		},
 	}
 

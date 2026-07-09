@@ -31,6 +31,12 @@ func NewHealthCheck(service service.HealthCheck) HealthCheck {
 // @Success 200 {object} model.HealthCheck
 // @Router /health-check [get]
 func (h *healthCheckHandler) CheckHealth(c *gin.Context) {
-	healthCheck := h.service.CheckHealth()
+	healthCheck, err := h.service.CheckHealth()
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
 	c.JSON(http.StatusOK, healthCheck)
 }

@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/NghiaLeopard/bookmark-management/internal/api/api.go (40.5%)</option>
+				
+				<option value="file1">github.com/NghiaLeopard/bookmark-management/internal/config/config.go (75.0%)</option>
+				
+				<option value="file2">github.com/NghiaLeopard/bookmark-management/internal/handler/genpass.go (100.0%)</option>
+				
+				<option value="file3">github.com/NghiaLeopard/bookmark-management/internal/handler/healthcheck.go (75.0%)</option>
+				
+				<option value="file4">github.com/NghiaLeopard/bookmark-management/internal/handler/shortenurl.go (66.7%)</option>
+				
+				<option value="file5">github.com/NghiaLeopard/bookmark-management/internal/repository/urlstorage.go (75.0%)</option>
+				
+				<option value="file6">github.com/NghiaLeopard/bookmark-management/internal/service/genpass.go (87.5%)</option>
+				
+				<option value="file7">github.com/NghiaLeopard/bookmark-management/internal/service/healthcheck.go (60.0%)</option>
+				
+				<option value="file8">github.com/NghiaLeopard/bookmark-management/internal/service/shortenurl.go (88.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package api
+
+import (
+        "log"
+        "net/http"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/config"
+        "github.com/NghiaLeopard/bookmark-management/internal/handler"
+        "github.com/NghiaLeopard/bookmark-management/internal/repository"
+        "github.com/NghiaLeopard/bookmark-management/internal/service"
+        "github.com/gin-gonic/gin"
+        "github.com/redis/go-redis/v9"
+        swaggerfiles "github.com/swaggo/files"
+        ginSwagger "github.com/swaggo/gin-swagger"
+)
+
+type Engine interface {
+        Start()
+        ServeHTTP(w http.ResponseWriter, r *http.Request)
+}
+
+type engine struct {
+        app    *gin.Engine
+        config *config.Config
+        rdb    *redis.Client
+}
+
+func NewEngine(rdb *redis.Client) Engine <span class="cov10" title="10">{
+        cfg, err := config.NewConfig()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err.Error())
+        }</span>
+
+        <span class="cov10" title="10">app := &amp;engine{app: gin.Default(), config: cfg, rdb: rdb}
+        app.InitRoutes()
+
+        return app</span>
+}
+
+func (e *engine) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov10" title="10">{
+        e.app.ServeHTTP(w, r)
+}</span>
+
+func (e *engine) Start() <span class="cov0" title="0">{
+        e.app.Run(":" + e.config.Port)
+}</span>
+
+func (e *engine) InitRoutes() <span class="cov0" title="0">{
+        e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
+        healthCheckService := service.NewHealthCheck(e.config, e.rdb)
+        healthCheckHandler := handler.NewHealthCheck(healthCheckService)
+        e.app.GET("/health-check", healthCheckHandler.CheckHealth)
+
+        genPassService := service.NewGenPassService()
+        genPassHandler := handler.NewGenPassHandler(genPassService)
+        e.app.POST("/genpass", genPassHandler.GeneratePassword)
+
+        urlStorage := repository.NewUrlStorage(e.rdb)
+        urlService := service.NewShortenUrlService(urlStorage, genPassService)
+        urlHandler := handler.NewShortenUrlHandler(urlService)
+        e.app.POST("/shortenurl", urlHandler.CreateShortenUrl)
+}</span></span></span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
+
+import (
+        "github.com/kelseyhightower/envconfig"
+)
+
+type Config struct {
+        Port        string `envconfig:"PORT" default:"8080"`
+        ServiceName string `envconfig:"SERVICE_NAME"`
+        InstanceId  string `envconfig:"INSTANCE_ID"`
+}
+
+func NewConfig() (*Config, error) <span class="cov10" title="10">{
+        var cfg Config
+        if err := envconfig.Process("", &amp;cfg); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov10" title="10">return &amp;cfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/service"
+        "github.com/gin-gonic/gin"
+)
+
+type GenPass interface {
+        GeneratePassword(c *gin.Context)
+}
+
+type genPassHandler struct {
+        genPassService service.GenPass
+}
+
+func NewGenPassHandler(genPassService service.GenPass) GenPass <span class="cov10" title="12">{
+        return &amp;genPassHandler{genPassService: genPassService}
+}</span>
+
+var lengthPassword int = 12
+
+func (h *genPassHandler) GeneratePassword(c *gin.Context) <span class="cov4" title="3">{
+
+        password, err := h.genPassService.GeneratePassword(lengthPassword)
+        if err != nil </span><span class="cov1" title="1">{
+                c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+                return
+        }</span>
+        
+        <span class="cov3" title="2">c.JSON(http.StatusOK, gin.H{"password": password})</span>
+
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handler
+
+import (
+        "net/http"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/service"
+        "github.com/gin-gonic/gin"
+)
+
+type HealthCheck interface {
+        CheckHealth(c *gin.Context)
+}
+
+type healthCheckHandler struct {
+        service service.HealthCheck
+}
+
+func NewHealthCheck(service service.HealthCheck) HealthCheck <span class="cov10" title="15">{
+        return &amp;healthCheckHandler{
+                service: service,
+        }
+}</span>
+
+// CheckHealth godoc
+// @Summary check health of the service
+// @Schemes
+// @Description check health of the service
+// @Tags health-check
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.HealthCheck
+// @Router /health-check [get]
+func (h *healthCheckHandler) CheckHealth(c *gin.Context) <span class="cov8" title="10">{
+        healthCheck, err := h.service.CheckHealth()
+
+        if err != nil </span>{
+</span>                c.AbortWithStatusJSON(http.StatusInternalServerError, "Internal server error")
+                return
+        }</span>
+
+        <span class="cov7" title="8">c.JSON(http.StatusOK, healthCheck)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handler
+
+import (
+        "net/http"
+        "time"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/service"
+        "github.com/gin-gonic/gin"
+)
+
+type ShortenUrlHandler interface {
+        CreateShortenUrl(ctx *gin.Context)
+        GetUrlByCode(ctx *gin.Context)
+}
+
+type shortenUrlHandler struct {
+        shortenUrlService service.ShortenUrlService
+}
+
+func NewShortenUrlHandler(shortenUrlService service.ShortenUrlService) ShortenUrlHandler <span class="cov10" title="14">{
+        return &amp;shortenUrlHandler{
+                shortenUrlService: shortenUrlService,
+        }
+}</span>
+
+type ShortenUrlInputBody struct {
+        Url    string        `json:"url" binding:"required"`
+        Expire time.Duration `json:"expire" binding:"required"`
+}
+
+func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) <span class="cov8" title="8">{
+        var input ShortenUrlInputBody
+        if err := ctx.ShouldBindJSON(&amp;input); err != nil </span><span class="cov5" title="4">{
+                ctx.AbortWithStatusJSON(http.StatusBadRequest, "Invalid input")
+                return
+        }</span>
+
+        <span class="cov5" title="4">code, err := h.shortenUrlService.CreateShortenUrl(ctx, input.Url, input.Expire)
+        if err != nil </span><span class="cov3" title="2">{
+                ctx.AbortWithStatusJSON(http.StatusInternalServerError, "Internal server error")
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, gin.H{
+                "code":    code,
+                "message": "Shorten URL generated successfully!",
+        })
+</span></span>}
+
+func (h *shortenUrlHandler) GetUrlByCode(ctx *gin.Context) <span class="cov0" title="0">{
+        ctx.JSON(http.StatusOK, gin.H{
+                "Status": "OK",
+        })
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package repository
+
+import (
+        "context"
+        "time"
+
+        "github.com/redis/go-redis/v9"
+)
+
+//go:generate mockery --name UrlStorage --filename urlstorage.go
+type UrlStorage interface {
+        StoreUrl(ctx context.Context, code, url string, expire time.Duration) error
+}
+
+type urlStorage struct {
+        rdb *redis.Client
+}
+
+func NewUrlStorage(rdb *redis.Client) UrlStorage <span class="cov10" title="12">{
+        return &amp;urlStorage{
+                rdb: rdb,
+        }
+}</span>
+
+func (s *urlStorage) StoreUrl(ctx context.Context, code, url string, expire time.Duration) error <span class="cov6" title="4">{
+        _, err := s.rdb.Set(ctx, code, url, expire).Result()
+        return err
+}</span>
+
+func (s *urlStorage) GetUrl(ctx context.Context, code string) (string, error) <span class="cov0" title="0">{
+        return s.rdb.Get(ctx, code).Result()
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "crypto/rand"
+        "math/big"
+)
+
+//go:generate mockery --name GenPass --filename genpass.go
+type GenPass interface {
+        GeneratePassword(length int) (string, error)
+}
+
+type genPassService struct {
+}
+
+func NewGenPassService() GenPass <span class="cov3" title="13">{
+        return genPassService{}
+}</span>
+
+var charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&amp;*-_=+?"
+
+func (g genPassService) GeneratePassword(length int) (string, error) <span class="cov2" title="6">{
+        password := make([]byte, length)
+
+        for i := 0; i &lt; length; i++ </span><span class="cov10" title="100054">{
+                n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", err
+                }</span>
+                <span class="cov10" title="100054">password[i] = charset[n.Int64()]</span>
+        }
+
+        <span class="cov2" title="6">return string(password), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "context"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/config"
+        "github.com/NghiaLeopard/bookmark-management/internal/model"
+        "github.com/google/uuid"
+        "github.com/redis/go-redis/v9"
+)
+
+//go:generate mockery --name HealthCheck --filename healthcheck.go
+type HealthCheck interface {
+        CheckHealth() (model.HealthCheck, error)
+}
+
+type healthCheckService struct {
+        cfg *config.Config
+        rdb *redis.Client
+</span>}
+
+func NewHealthCheck(cfg *config.Config, rdb *redis.Client) HealthCheck {
+        i</span>f cfg.InstanceId == "" </span><span class="cov8" title="9">{
+                instanceId := uuid.New().String()
+
+                cfg.InstanceId = instanceId
+        }</span></span>
+
+        <span class="cov10" title="15">return &amp;healthCheckService{
+                cfg: cfg,
+                rdb: rdb,
+        }</span>
+}
+
+func (h *healthCheckService) CheckHealth() (model.HealthCheck, error) {
+        result, err := h.rdb.Ping(context.Background()).Result()
+
+        </span>if err != nil || result != "PONG" </span><span class="cov3" title="2">{
+                return model.HealthCheck{
+                        Message:     "Error",
+                        ServiceName: h.cfg.ServiceName,
+                        InstanceId:  h.cfg.InstanceId,
+                        RedisStatus: "Error",
+                }, err
+        }</span>
+
+        <span class="cov7" title="8">healthCheck := model.HealthCheck{
+                Message:     "OK",
+                ServiceName: h.cfg.ServiceName,
+                InstanceId:  h.cfg.InstanceId,
+                RedisStatus: "PONG",
+        }
+
+        return healthCheck, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "context"
+        "time"
+
+        "github.com/NghiaLeopard/bookmark-management/internal/repository"
+)
+
+//go:generate mockery --name ShortenUrlService --filename shortenurl.go
+type ShortenUrlService interface {
+        CreateShortenUrl(ctx context.Context, url string, expire time.Duration) (string, error)
+        GetUrlByCode(ctx context.Context, code string) (string, error)
+}
+
+type shortenUrlService struct {
+        urlStorage repository.UrlStorage
+        genCode    GenPass
+}
+
+func NewShortenUrlService(urlStorage repository.UrlStorage, genCode GenPass) ShortenUrlService <span class="cov10" title="13">{
+        return &amp;shortenUrlService{
+                urlStorage: urlStorage,
+                genCode:    genCode,
+        }
+}</span>
+
+var length = 7
+
+func (s *shortenUrlService) CreateShortenUrl(ctx context.Context, url string, expire time.Duration) (string, error) <span class="cov6" title="5">{
+        code, err := s.genCode.GeneratePassword(length)
+
+        if err != nil </span><span class="cov1" title="1">{
+                return "", err
+        }</span>
+
+        <span class="cov5" title="4">err = s.urlStorage.StoreUrl(ctx, code, url, expire)
+
+        if err != nil </span><span class="cov3" title="2">{
+                return "", err
+        }</span>
+
+        <span class="cov3" title="2">return code, nil</span>
+}
+
+func (s *shortenUrlService) GetUrlByCode(ctx context.Context, code string) (string, error) <span class="cov0" title="0">{
+        return "", nil
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
