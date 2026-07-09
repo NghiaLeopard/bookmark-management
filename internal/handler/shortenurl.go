@@ -24,10 +24,22 @@ func NewShortenUrlHandler(shortenUrlService service.ShortenUrlService) ShortenUr
 }
 
 type ShortenUrlInputBody struct {
-	Url    string        `json:"url" binding:"required"`
-	Expire time.Duration `json:"expire" binding:"required"`
+	Url    string        `json:"url" binding:"required,url" example:"https://example.com/long-page"`
+	Expire time.Duration `json:"expire" binding:"required,min=0" swaggertype:"integer" example:"3600000000000"`
 }
 
+// CreateShortenUrl godoc
+// @Summary Create shorten url
+// @Schemes
+// @Description Create a short code for a long URL and store it in Redis until expire (duration in nanoseconds, e.g. 3600000000000 = 1 hour)
+// @Tags links
+// @Accept json
+// @Produce json
+// @Param body body ShortenUrlInputBody true "URL to shorten and TTL"
+// @Success 200 {object} model.ShortenUrlResponse
+// @Failure 400 {string} string "Invalid input"
+// @Failure 500 {string} string "Internal server error"
+// @Router /links/shorten [post]
 func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) {
 	var input ShortenUrlInputBody
 	if err := ctx.ShouldBindJSON(&input); err != nil {

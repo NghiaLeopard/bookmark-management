@@ -59,5 +59,5 @@ func (e *engine) InitRoutes() {
 	urlStorage := repository.NewUrlStorage(e.rdb)
 	urlService := service.NewShortenUrlService(urlStorage, genPassService)
 	urlHandler := handler.NewShortenUrlHandler(urlService)
-	e.app.POST("/shortenurl", urlHandler.CreateShortenUrl)
+	e.app.POST("/links/shorten", urlHandler.CreateShortenUrl)
 }

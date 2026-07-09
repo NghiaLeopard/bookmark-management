@@ -37,9 +37,73 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/links/shorten": {
+            "post": {
+                "description": "Create a short code for a long URL and store it in Redis until expire (duration in nanoseconds, e.g. 3600000000000 = 1 hour)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "links"
+                ],
+                "summary": "Create shorten url",
+                "parameters": [
+                    {
+                        "description": "URL to shorten and TTL",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.ShortenUrlInputBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ShortenUrlResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handler.ShortenUrlInputBody": {
+            "type": "object",
+            "required": [
+                "expire",
+                "url"
+            ],
+            "properties": {
+                "expire": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3600000000000
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/long-page"
+                }
+            }
+        },
         "model.HealthCheck": {
             "type": "object",
             "properties": {
@@ -49,8 +113,24 @@ const docTemplate = `{
                 "message": {
                     "type": "string"
                 },
+                "redis_status": {
+                    "type": "string"
+                },
                 "service_name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ShortenUrlResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "a1b2c3d"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Shorten URL generated successfully!"
                 }
             }
         }
@@ -59,12 +139,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Bookmark Management API",
+	Description:      "Bookmark management service API",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

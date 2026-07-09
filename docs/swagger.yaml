@@ -1,15 +1,44 @@
+basePath: /
 definitions:
+  handler.ShortenUrlInputBody:
+    properties:
+      expire:
+        example: 3600000000000
+        minimum: 0
+        type: integer
+      url:
+        example: https://example.com/long-page
+        type: string
+    required:
+    - expire
+    - url
+    type: object
   model.HealthCheck:
     properties:
       instance_id:
         type: string
       message:
         type: string
+      redis_status:
+        type: string
       service_name:
         type: string
     type: object
+  model.ShortenUrlResponse:
+    properties:
+      code:
+        example: a1b2c3d
+        type: string
+      message:
+        example: Shorten URL generated successfully!
+        type: string
+    type: object
+host: localhost:8080
 info:
   contact: {}
+  description: Bookmark management service API
+  title: Bookmark Management API
+  version: "1.0"
 paths:
   /health-check:
     get:
@@ -26,4 +55,35 @@ paths:
       summary: check health of the service
       tags:
       - health-check
+  /links/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Create a short code for a long URL and store it in Redis until
+        expire (duration in nanoseconds, e.g. 3600000000000 = 1 hour)
+      parameters:
+      - description: URL to shorten and TTL
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ShortenUrlInputBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ShortenUrlResponse'
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create shorten url
+      tags:
+      - links
 swagger: "2.0"

@@ -1,4 +1,4 @@
-.PHONY: run test dev-run
+.PHONY: run test dev-run swag
 
 run:
 	go run ./cmd/api/main.go
@@ -19,3 +19,6 @@ test:
 	fi
 
 dev-run: run test
+
+swag: 
+	swag init -g ./cmd/api/main.go -o ./docs

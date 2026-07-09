@@ -7,6 +7,11 @@ import (
 	"github.com/NghiaLeopard/bookmark-management/internal/pkg/redis"
 )
 
+// @title Bookmark Management API
+// @version 1.0
+// @description Bookmark management service API
+// @host localhost:8080
+// @BasePath /
 func main() {
 	rdb, err := redis.NewClient("")
 	if err != nil {
