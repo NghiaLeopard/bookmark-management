@@ -8,7 +8,7 @@ import (
 )
 
 //go:generate mockery --name ShortenUrlService --filename shortenurl.go
-type ShortenUrlService interface {
+type ShortenUrl interface {
 	CreateShortenUrl(ctx context.Context, url string, expire time.Duration) (string, error)
 	GetUrlByCode(ctx context.Context, code string) (string, error)
 }
@@ -18,7 +18,7 @@ type shortenUrlService struct {
 	genCode    GenPass
 }
 
-func NewShortenUrlService(urlStorage repository.UrlStorage, genCode GenPass) ShortenUrlService {
+func NewShortenUrl(urlStorage repository.UrlStorage, genCode GenPass) ShortenUrl {
 	return &shortenUrlService{
 		urlStorage: urlStorage,
 		genCode:    genCode,
@@ -34,6 +34,12 @@ func (s *shortenUrlService) CreateShortenUrl(ctx context.Context, url string, ex
 		return "", err
 	}
 
+	_, err = s.urlStorage.GetUrlByCode(ctx, code)
+
+	if err == nil {
+		return s.CreateShortenUrl(ctx, url, expire)
+	}
+
 	err = s.urlStorage.StoreUrl(ctx, code, url, expire)
 
 	if err != nil {
@@ -44,5 +50,5 @@ func (s *shortenUrlService) CreateShortenUrl(ctx context.Context, url string, ex
 }
 
 func (s *shortenUrlService) GetUrlByCode(ctx context.Context, code string) (string, error) {
-	return "", nil
+	return s.urlStorage.GetUrlByCode(ctx, code)
 }

@@ -1,8 +1,7 @@
-basePath: /
 definitions:
   handler.ShortenUrlInputBody:
     properties:
-      expire:
+      exp:
         example: 3600000000000
         minimum: 0
         type: integer
@@ -10,7 +9,7 @@ definitions:
         example: https://example.com/long-page
         type: string
     required:
-    - expire
+    - exp
     - url
     type: object
   model.HealthCheck:
@@ -33,7 +32,6 @@ definitions:
         example: Shorten URL generated successfully!
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: Bookmark management service API
@@ -55,6 +53,35 @@ paths:
       summary: check health of the service
       tags:
       - health-check
+  /links/redirect/{code}:
+    get:
+      description: Redirect to long URL by code
+      parameters:
+      - description: Code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to long URL
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "404":
+          description: Code not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Redirect to long URL
+      tags:
+      - links
   /links/shorten:
     post:
       consumes:

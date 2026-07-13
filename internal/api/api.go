@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/NghiaLeopard/bookmark-management/docs"
 	"github.com/NghiaLeopard/bookmark-management/internal/config"
 	"github.com/NghiaLeopard/bookmark-management/internal/handler"
 	"github.com/NghiaLeopard/bookmark-management/internal/repository"
@@ -46,18 +47,29 @@ func (e *engine) Start() {
 }
 
 func (e *engine) InitRoutes() {
+
+	basePath := e.config.BasePath
+
+	docs.SwaggerInfo.BasePath = basePath
 	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	healthCheckService := service.NewHealthCheck(e.config, e.rdb)
 	healthCheckHandler := handler.NewHealthCheck(healthCheckService)
-	e.app.GET("/health-check", healthCheckHandler.CheckHealth)
 
 	genPassService := service.NewGenPassService()
 	genPassHandler := handler.NewGenPassHandler(genPassService)
-	e.app.POST("/genpass", genPassHandler.GeneratePassword)
 
 	urlStorage := repository.NewUrlStorage(e.rdb)
-	urlService := service.NewShortenUrlService(urlStorage, genPassService)
+	urlService := service.NewShortenUrl(urlStorage, genPassService)
 	urlHandler := handler.NewShortenUrlHandler(urlService)
-	e.app.POST("/links/shorten", urlHandler.CreateShortenUrl)
+
+	apiGroup := e.app.Group("v1")
+	{
+		apiGroup.GET("/health-check", healthCheckHandler.CheckHealth)
+		apiGroup.POST("/genpass", genPassHandler.GeneratePassword)
+		apiGroup.POST("/links/shorten", urlHandler.CreateShortenUrl)
+		apiGroup.GET("/links/redirect/:code", urlHandler.Redirect)
+
+	}
+
 }

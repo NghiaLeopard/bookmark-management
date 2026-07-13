@@ -38,6 +38,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/links/redirect/{code}": {
+            "get": {
+                "description": "Redirect to long URL by code",
+                "tags": [
+                    "links"
+                ],
+                "summary": "Redirect to long URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to long URL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Code not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/links/shorten": {
             "post": {
                 "description": "Create a short code for a long URL and store it in Redis until expire (duration in nanoseconds, e.g. 3600000000000 = 1 hour)",
@@ -89,11 +133,11 @@ const docTemplate = `{
         "handler.ShortenUrlInputBody": {
             "type": "object",
             "required": [
-                "expire",
+                "exp",
                 "url"
             ],
             "properties": {
-                "expire": {
+                "exp": {
                     "type": "integer",
                     "minimum": 0,
                     "example": 3600000000000
@@ -140,8 +184,8 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Bookmark Management API",
 	Description:      "Bookmark management service API",

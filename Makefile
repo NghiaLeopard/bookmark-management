@@ -3,6 +3,9 @@
 run:
 	go run ./cmd/api/main.go
 
+swag: 
+	swag init -g ./cmd/api/main.go -o ./docs
+
 COVERAGE_EXCLUDE = mocks|main.go|test|redis|docs
 COVERAGE_THRESHOLD = 80
 
@@ -18,7 +21,5 @@ test:
 		echo "Coverage ($$total%) meets threshold ($(COVERAGE_THRESHOLD)%)"; \
 	fi
 
-dev-run: run test
+dev-run: swag run
 
-swag: 
-	swag init -g ./cmd/api/main.go -o ./docs

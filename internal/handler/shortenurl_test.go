@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NghiaLeopard/bookmark-management/internal/repository"
 	mocksService "github.com/NghiaLeopard/bookmark-management/internal/service/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,6 @@ func TestShortenURL(t *testing.T) {
 		SetupMocksServices func(t *testing.T) *mocksService.ShortenUrlService
 		ExpectedStatusCode int
 		ExpectedResponse   string
-		ExpectedError      error
 	}{
 		{
 			name: "success",
@@ -48,7 +48,6 @@ func TestShortenURL(t *testing.T) {
 			},
 			ExpectedStatusCode: http.StatusOK,
 			ExpectedResponse:   `{"code":"1234567","message":"Shorten URL generated successfully!"}`,
-			ExpectedError:      nil,
 		},
 		{
 			name: "Invalid input",
@@ -69,7 +68,6 @@ func TestShortenURL(t *testing.T) {
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
 			ExpectedResponse:   `"Invalid input"`,
-			ExpectedError:      errors.New("Invalid input"),
 		},
 		{
 			name: "Invalid input",
@@ -90,7 +88,6 @@ func TestShortenURL(t *testing.T) {
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
 			ExpectedResponse:   `"Invalid input"`,
-			ExpectedError:      errors.New("Invalid input"),
 		},
 		{
 			name: "Internal server error",
@@ -113,7 +110,6 @@ func TestShortenURL(t *testing.T) {
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,
 			ExpectedResponse:   `"Internal server error"`,
-			ExpectedError:      errors.New("Internal server error"),
 		},
 	}
 
@@ -132,6 +128,109 @@ func TestShortenURL(t *testing.T) {
 
 			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
 			assert.Equal(t, testCase.ExpectedResponse, recorder.Body.String())
+		})
+	}
+}
+
+func TestRedirect(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name               string
+		SetupRequest       func(ctx *gin.Context)
+		SetupMocksServices func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService
+		ExpectedStatusCode int
+		ExpectedResponse   string
+	}{
+		{
+			name: "success",
+			SetupRequest: func(ctx *gin.Context) {
+				ctx.Request = httptest.NewRequest(http.MethodGet, "/redirect/1234567", nil)
+				ctx.Params = gin.Params{
+					{
+						Key:   "code",
+						Value: "1234567",
+					},
+				}
+			},
+			SetupMocksServices: func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService {
+				mockShortenUrlService := mocksService.NewShortenUrlService(t)
+				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("http://localhost:8000", nil)
+				return mockShortenUrlService
+			},
+			ExpectedStatusCode: http.StatusFound,
+			ExpectedResponse:   "http://localhost:8000",
+		},
+		{
+			name: "Param required",
+			SetupRequest: func(ctx *gin.Context) {
+				ctx.Request = httptest.NewRequest(http.MethodGet, "/redirect/", nil)
+			},
+			SetupMocksServices: func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService {
+				return mocksService.NewShortenUrlService(t)
+			},
+			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedResponse:   `"Invalid input"`,
+		},
+		{
+			name: "code not found",
+			SetupRequest: func(ctx *gin.Context) {
+				ctx.Request = httptest.NewRequest(http.MethodGet, "/redirect/1234567", nil)
+				ctx.Params = gin.Params{
+					{
+						Key:   "code",
+						Value: "1234567",
+					},
+				}
+			},
+			SetupMocksServices: func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService {
+				mockShortenUrlService := mocksService.NewShortenUrlService(t)
+				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("", repository.ErrCodeNotFound)
+				return mockShortenUrlService
+			},
+			ExpectedStatusCode: http.StatusNotFound,
+			ExpectedResponse:   `"Code not found"`,
+		},
+		{
+			name: "internal server error",
+			SetupRequest: func(ctx *gin.Context) {
+				ctx.Request = httptest.NewRequest(http.MethodGet, "/redirect/1234567", nil)
+				ctx.Params = gin.Params{
+					{
+						Key:   "code",
+						Value: "1234567",
+					},
+				}
+			},
+			SetupMocksServices: func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService {
+				mockShortenUrlService := mocksService.NewShortenUrlService(t)
+				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("", errors.New("Internal server error"))
+				return mockShortenUrlService
+			},
+			ExpectedStatusCode: http.StatusInternalServerError,
+			ExpectedResponse:   `"Internal server error"`,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			testCase.SetupRequest(ctx)
+
+			mockServices := testCase.SetupMocksServices(t, ctx)
+
+			shortenURLHandler := NewShortenUrlHandler(mockServices)
+			shortenURLHandler.Redirect(ctx)
+
+			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+
+			if recorder.Header().Get("Location") != "" {
+				assert.Equal(t, testCase.ExpectedResponse, recorder.Header().Get("Location"))
+			} else {
+				assert.Equal(t, testCase.ExpectedResponse, recorder.Body.String())
+			}
 		})
 	}
 }
