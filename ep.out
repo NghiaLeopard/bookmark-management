@@ -1,7 +1,0 @@
-mode: set
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:28.42,30.16 2 1
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:30.16,32.3 1 0
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:34.2,37.12 3 1
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:40.68,42.2 1 1
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:44.26,46.2 1 0
-github.com/NghiaLeopard/bookmark-management/internal/api/api.go:48.31,63.2 11 1
