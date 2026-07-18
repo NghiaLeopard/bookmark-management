@@ -43,7 +43,7 @@ type ShortenUrlInputBody struct {
 // @Success 200 {object} model.ShortenUrlResponse
 // @Failure 400 {string} string "Invalid input"
 // @Failure 500 {string} string "Internal server error"
-// @Router /links/shorten [post]
+// @Router /v1/links/shorten [post]
 func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) {
 	var input ShortenUrlInputBody
 	if err := ctx.ShouldBindJSON(&input); err != nil {
@@ -74,7 +74,7 @@ func (h *shortenUrlHandler) CreateShortenUrl(ctx *gin.Context) {
 // @Failure 400 {string} string "Invalid input"
 // @Failure 404 {string} string "Code not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /links/redirect/{code} [get]
+// @Router /v1/links/redirect/{code} [get]
 func (h *shortenUrlHandler) Redirect(ctx *gin.Context) {
 	code := ctx.Param("code")
 

@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/NghiaLeopard/bookmark-management/docs"
 	"github.com/NghiaLeopard/bookmark-management/internal/config"
 	"github.com/NghiaLeopard/bookmark-management/internal/handler"
 	"github.com/NghiaLeopard/bookmark-management/internal/repository"
@@ -48,9 +47,6 @@ func (e *engine) Start() {
 
 func (e *engine) InitRoutes() {
 
-	basePath := e.config.BasePath
-
-	docs.SwaggerInfo.BasePath = basePath
 	e.app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	healthCheckService := service.NewHealthCheck(e.config, e.rdb)
