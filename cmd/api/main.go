@@ -10,8 +10,6 @@ import (
 // @title Bookmark Management API
 // @version 1.0
 // @description Bookmark management service API
-// @host localhost:8080
-// @BasePath /
 func main() {
 	rdb, err := redis.NewClient("")
 	if err != nil {

@@ -1,6 +1,7 @@
 package intergration_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -39,7 +40,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/shortenurl", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -66,7 +67,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/shortenurl", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -92,7 +93,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/shortenurl", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -120,7 +121,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/shortenurl", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				mockRedis.Close()
@@ -143,6 +144,108 @@ func TestShortenURL(t *testing.T) {
 
 			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
 			assert.Contains(t, recorder.Body.String(), testCase.ExpectedResponseBody)
+		})
+	}
+}
+
+func TestRedirect(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                 string
+		SetupServerHttp      func(t *testing.T) *httptest.ResponseRecorder
+		ExpectedStatusCode   int
+		ExpectedResponseBody string
+	}{
+		{
+			name: "success",
+			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+
+				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+
+				mockRedis := redis.NewMockRClient(t)
+
+				mockRedis.Set(context.Background(), "1234567", "http://localhost:8000", time.Hour)
+
+				app := api.NewEngine(mockRedis)
+
+				app.ServeHTTP(recorder, request)
+
+				return recorder
+			},
+			ExpectedStatusCode:   http.StatusFound,
+			ExpectedResponseBody: "http://localhost:8000",
+		},
+		{
+			name: "error with empty code",
+			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+
+				request := httptest.NewRequest(http.MethodGet, "/links/redirect/", nil)
+
+				mockRedis := redis.NewMockRClient(t)
+
+				app := api.NewEngine(mockRedis)
+
+				app.ServeHTTP(recorder, request)
+
+				return recorder
+			},
+			ExpectedStatusCode:   http.StatusNotFound,
+			ExpectedResponseBody: `404 page not found`,
+		},
+		{
+			name: "error with code not found",
+			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+
+				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+
+				mockRedis := redis.NewMockRClient(t)
+
+				app := api.NewEngine(mockRedis)
+
+				app.ServeHTTP(recorder, request)
+
+				return recorder
+			},
+			ExpectedStatusCode:   http.StatusNotFound,
+			ExpectedResponseBody: `Code not found`,
+		},
+		{
+			name: "error with redis is closed",
+			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+
+				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+
+				mockRedis := redis.NewMockRClient(t)
+
+				mockRedis.Close()
+
+				app := api.NewEngine(mockRedis)
+
+				app.ServeHTTP(recorder, request)
+
+				return recorder
+			},
+			ExpectedStatusCode:   http.StatusInternalServerError,
+			ExpectedResponseBody: `Internal server error`,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			recorder := testCase.SetupServerHttp(t)
+
+			if recorder.Header().Get("Location") != "" {
+				assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+				assert.Equal(t, testCase.ExpectedResponseBody, recorder.Header().Get("Location"))
+			} else {
+				assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), testCase.ExpectedResponseBody)
+			}
 		})
 	}
 }

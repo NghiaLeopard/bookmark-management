@@ -17,7 +17,7 @@ func NewGenPassService() GenPass {
 	return genPassService{}
 }
 
-var charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*-_=+?"
+var charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func (g genPassService) GeneratePassword(length int) (string, error) {
 	password := make([]byte, length)
