@@ -35,7 +35,7 @@ func TestHealthCheckEP(t *testing.T) {
 			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/health-check", nil)
 
 				redis := redisPkg.NewMockRClient(t)
 				app := api.NewEngine(redis)
@@ -57,7 +57,7 @@ func TestHealthCheckEP(t *testing.T) {
 			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/health-check", nil)
 
 				redis := redisPkg.NewMockRClient(t)
 				app := api.NewEngine(redis)
@@ -80,7 +80,7 @@ func TestHealthCheckEP(t *testing.T) {
 			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/health-check", nil)
 
 				redis := redisPkg.NewMockRClient(t)
 				app := api.NewEngine(redis)
@@ -103,7 +103,7 @@ func TestHealthCheckEP(t *testing.T) {
 			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/health-check", nil)
 
 				redis := redisPkg.NewMockRClient(t)
 				app := api.NewEngine(redis)
@@ -126,7 +126,7 @@ func TestHealthCheckEP(t *testing.T) {
 			setUpServeHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/health-check", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/health-check", nil)
 
 				redis := redisPkg.NewMockRClient(t)
 				redis.Close()

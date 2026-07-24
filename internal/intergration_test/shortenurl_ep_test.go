@@ -19,11 +19,10 @@ func TestShortenURL(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name                 string
-		Body                 handler.ShortenUrlInputBody
-		setUpServeHttp       func(t *testing.T, body handler.ShortenUrlInputBody) *httptest.ResponseRecorder
-		ExpectedStatusCode   int
-		ExpectedResponseBody string
+		name           string
+		Body           handler.ShortenUrlInputBody
+		setUpServeHttp func(t *testing.T, body handler.ShortenUrlInputBody) *httptest.ResponseRecorder
+		assertResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "success",
@@ -40,7 +39,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/v1/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -49,8 +48,10 @@ func TestShortenURL(t *testing.T) {
 
 				return recorder
 			},
-			ExpectedStatusCode:   http.StatusOK,
-			ExpectedResponseBody: `{"code":"`,
+			assertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `{"code":"`)
+			},
 		},
 
 		{
@@ -67,7 +68,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/v1/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -76,8 +77,11 @@ func TestShortenURL(t *testing.T) {
 
 				return recorder
 			},
-			ExpectedStatusCode:   http.StatusBadRequest,
-			ExpectedResponseBody: `Invalid input`,
+			assertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Input error"`)
+				assert.Contains(t, recorder.Body.String(), `"Detail":["Url is invalid (required)"]`)
+			},
 		},
 		{
 			name: "error with empty expire",
@@ -93,7 +97,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/v1/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				app := api.NewEngine(mockRedis)
@@ -102,8 +106,11 @@ func TestShortenURL(t *testing.T) {
 
 				return recorder
 			},
-			ExpectedStatusCode:   http.StatusBadRequest,
-			ExpectedResponseBody: `Invalid input`,
+			assertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Input error"`)
+				assert.Contains(t, recorder.Body.String(), `"Detail":["Expire is invalid (required)"]`)
+			},
 		},
 
 		{
@@ -121,7 +128,7 @@ func TestShortenURL(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				request := httptest.NewRequest(http.MethodPost, "/links/shorten", strings.NewReader(string(bodyJson)))
+				request := httptest.NewRequest(http.MethodPost, "/v1/links/shorten", strings.NewReader(string(bodyJson)))
 
 				mockRedis := redis.NewMockRClient(t)
 				mockRedis.Close()
@@ -131,8 +138,10 @@ func TestShortenURL(t *testing.T) {
 
 				return recorder
 			},
-			ExpectedStatusCode:   http.StatusInternalServerError,
-			ExpectedResponseBody: `"Internal server error"`,
+			assertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Internal server error"`)
+			},
 		},
 	}
 
@@ -142,8 +151,7 @@ func TestShortenURL(t *testing.T) {
 
 			recorder := testCase.setUpServeHttp(t, testCase.Body)
 
-			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
-			assert.Contains(t, recorder.Body.String(), testCase.ExpectedResponseBody)
+			testCase.assertResponse(t, recorder)
 		})
 	}
 }
@@ -162,7 +170,7 @@ func TestRedirect(t *testing.T) {
 			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/1234567", nil)
 
 				mockRedis := redis.NewMockRClient(t)
 
@@ -182,7 +190,7 @@ func TestRedirect(t *testing.T) {
 			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/links/redirect/", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/", nil)
 
 				mockRedis := redis.NewMockRClient(t)
 
@@ -200,7 +208,7 @@ func TestRedirect(t *testing.T) {
 			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/1234567", nil)
 
 				mockRedis := redis.NewMockRClient(t)
 
@@ -218,7 +226,7 @@ func TestRedirect(t *testing.T) {
 			SetupServerHttp: func(t *testing.T) *httptest.ResponseRecorder {
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodGet, "/links/redirect/1234567", nil)
+				request := httptest.NewRequest(http.MethodGet, "/v1/links/redirect/1234567", nil)
 
 				mockRedis := redis.NewMockRClient(t)
 

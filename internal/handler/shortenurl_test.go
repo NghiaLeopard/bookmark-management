@@ -24,8 +24,7 @@ func TestShortenURL(t *testing.T) {
 		Body               ShortenUrlInputBody
 		SetUpRequest       func(ctx *gin.Context, body ShortenUrlInputBody)
 		SetupMocksServices func(t *testing.T) *mocksService.ShortenUrlService
-		ExpectedStatusCode int
-		ExpectedResponse   string
+		AssertResponse     func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "success",
@@ -46,11 +45,13 @@ func TestShortenURL(t *testing.T) {
 				mockShortenUrlService.On("CreateShortenUrl", mock.Anything, "http://localhost:8000", time.Hour).Return("1234567", nil)
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusOK,
-			ExpectedResponse:   `{"code":"1234567","message":"Shorten URL generated successfully!"}`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, `{"code":"1234567","message":"Shorten URL generated successfully!"}`, recorder.Body.String())
+			},
 		},
 		{
-			name: "Invalid input",
+			name: "Invalid input url",
 			Body: ShortenUrlInputBody{
 				Expire: time.Hour,
 			},
@@ -66,11 +67,14 @@ func TestShortenURL(t *testing.T) {
 				mockShortenUrlService := mocksService.NewShortenUrlService(t)
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusBadRequest,
-			ExpectedResponse:   `"Invalid input"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Input error"`)
+				assert.Contains(t, recorder.Body.String(), `"Detail":["Url is invalid (required)"]`)
+			},
 		},
 		{
-			name: "Invalid input",
+			name: "Invalid input expire",
 			Body: ShortenUrlInputBody{
 				Url: "http://localhost:8000",
 			},
@@ -86,8 +90,11 @@ func TestShortenURL(t *testing.T) {
 				mockShortenUrlService := mocksService.NewShortenUrlService(t)
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusBadRequest,
-			ExpectedResponse:   `"Invalid input"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Input error"`)
+				assert.Contains(t, recorder.Body.String(), `"Detail":["Expire is invalid (required)"]`)
+			},
 		},
 		{
 			name: "Internal server error",
@@ -108,8 +115,10 @@ func TestShortenURL(t *testing.T) {
 				mockShortenUrlService.On("CreateShortenUrl", mock.Anything, "http://localhost:8000", time.Hour).Return("", errors.New("Internal server error"))
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusInternalServerError,
-			ExpectedResponse:   `"Internal server error"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Internal server error"`)
+			},
 		},
 	}
 
@@ -126,8 +135,7 @@ func TestShortenURL(t *testing.T) {
 			shortenURLHandler := NewShortenUrlHandler(mockServices)
 			shortenURLHandler.CreateShortenUrl(ctx)
 
-			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
-			assert.Equal(t, testCase.ExpectedResponse, recorder.Body.String())
+			testCase.AssertResponse(t, recorder)
 		})
 	}
 }
@@ -139,8 +147,7 @@ func TestRedirect(t *testing.T) {
 		name               string
 		SetupRequest       func(ctx *gin.Context)
 		SetupMocksServices func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService
-		ExpectedStatusCode int
-		ExpectedResponse   string
+		AssertResponse     func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "success",
@@ -158,8 +165,10 @@ func TestRedirect(t *testing.T) {
 				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("http://localhost:8000", nil)
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusFound,
-			ExpectedResponse:   "http://localhost:8000",
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusFound, recorder.Code)
+				assert.Equal(t, "http://localhost:8000", recorder.Header().Get("Location"))
+			},
 		},
 		{
 			name: "Param required",
@@ -169,8 +178,10 @@ func TestRedirect(t *testing.T) {
 			SetupMocksServices: func(t *testing.T, ctx *gin.Context) *mocksService.ShortenUrlService {
 				return mocksService.NewShortenUrlService(t)
 			},
-			ExpectedStatusCode: http.StatusBadRequest,
-			ExpectedResponse:   `"Invalid input"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Input error"`)
+			},
 		},
 		{
 			name: "code not found",
@@ -188,8 +199,10 @@ func TestRedirect(t *testing.T) {
 				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("", repository.ErrCodeNotFound)
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusNotFound,
-			ExpectedResponse:   `"Code not found"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusNotFound, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Code not found"`)
+			},
 		},
 		{
 			name: "internal server error",
@@ -207,8 +220,10 @@ func TestRedirect(t *testing.T) {
 				mockShortenUrlService.On("GetUrlByCode", ctx, "1234567").Return("", errors.New("Internal server error"))
 				return mockShortenUrlService
 			},
-			ExpectedStatusCode: http.StatusInternalServerError,
-			ExpectedResponse:   `"Internal server error"`,
+			AssertResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"message":"Internal server error"`)
+			},
 		},
 	}
 	for _, testCase := range testCases {
@@ -224,13 +239,8 @@ func TestRedirect(t *testing.T) {
 			shortenURLHandler := NewShortenUrlHandler(mockServices)
 			shortenURLHandler.Redirect(ctx)
 
-			assert.Equal(t, testCase.ExpectedStatusCode, recorder.Code)
+			testCase.AssertResponse(t, recorder)
 
-			if recorder.Header().Get("Location") != "" {
-				assert.Equal(t, testCase.ExpectedResponse, recorder.Header().Get("Location"))
-			} else {
-				assert.Equal(t, testCase.ExpectedResponse, recorder.Body.String())
-			}
 		})
 	}
 }
